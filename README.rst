@@ -2,6 +2,7 @@ Cassandra-migrate
 =================
 
 Simple Cassandra schema migration tool.
+We already had a repo called cassandra-migrate, so this got renamed.
 
 Installation
 ------------

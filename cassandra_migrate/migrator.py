@@ -488,11 +488,36 @@ class Migrator(object):
             raise ConcurrentMigration(last_version.version,
                                       last_version.name)
 
+    # if helm install times out, possible to get a migration stuck in progress.
+    # please don't run this (with --force-in-progress) if it's actually still doing something.
+    def _cleanup_stuck_in_progress(self, cur_versions):
+        if not cur_versions:
+            return
+
+        last_version = cur_versions[-1]
+        if last_version.state != Migration.State.IN_PROGRESS:
+            return
+
+        self.logger.warn(
+            'Cleaning up previous migration stuck in progress '
+            '(version {}): {}'.format(last_version.version, last_version.name))
+
+        result = self._execute(
+            self._q(DELETE_DB_VERSION),
+            (last_version.id, Migration.State.IN_PROGRESS))
+
+        if not result[0].applied:
+            raise FailedMigration(last_version.version,
+                                      last_version.name)
+
     def _advance(self, migrations, target, cur_versions, skip=False,
-                 force=False):
+                 force=False, force_in_progress=False):
         """Apply all necessary migrations to reach a target version"""
         if force:
             self._cleanup_previous_versions(cur_versions)
+
+        if force_in_progress:
+            self._cleanup_stuck_in_progress(cur_versions)
 
         target_version = self._get_target_version(target)
 
@@ -536,10 +561,11 @@ class Migrator(object):
 
         last_version, cur_versions, pending_migrations = \
             self._verify_migrations(self.config.migrations,
-                                    ignore_failed=opts.force)
+                                    ignore_failed=opts.force,
+                                    ignore_concurrent=opts.force_in_progress)
 
         self._advance(pending_migrations, opts.db_version, cur_versions,
-                      force=opts.force)
+                      force=opts.force, force_in_progress=opts.force_in_progress)
 
     @confirmation_required
     def reset(self, opts):

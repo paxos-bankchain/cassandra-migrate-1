@@ -93,6 +93,8 @@ def main():
              'by applying any new migration scripts in sequence')
     mgrat.add_argument('-f', '--force', action='store_true',
                        help='Force migration even if last attempt failed')
+    mgrat.add_argument('-i', '--force-in-progress', action='store_true',
+                       help='Force migration if last attempt is stuck in progress')
     mgrat.set_defaults(action='migrate')
 
     stats = cmds.add_parser(

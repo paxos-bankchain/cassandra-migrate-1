@@ -330,8 +330,6 @@ class Migrator(object):
 
                 raise FailedMigration(version.version, version.name)
 
-            #last_version = version.version
-
             # A migration is in progress.
             if version.state == Migration.State.IN_PROGRESS:
                 if ignore_concurrent:

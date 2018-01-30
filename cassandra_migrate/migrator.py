@@ -330,13 +330,15 @@ class Migrator(object):
 
                 raise FailedMigration(version.version, version.name)
 
-            last_version = version.version
+            #last_version = version.version
 
             # A migration is in progress.
             if version.state == Migration.State.IN_PROGRESS:
                 if ignore_concurrent:
                     break
                 raise ConcurrentMigration(version.version, version.name)
+
+            last_version = version.version
 
             # A stored version's migrations differs from the one in the FS.
             if version.content != migration.content or \
@@ -579,6 +581,7 @@ class Migrator(object):
         self.cluster.refresh_schema_metadata()
 
         opts.force = False
+        opts.force_in_progress = False
         self.migrate(opts)
 
     @staticmethod
